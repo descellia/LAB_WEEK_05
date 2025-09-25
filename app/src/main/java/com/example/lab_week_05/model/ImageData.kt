@@ -4,7 +4,13 @@ import com.squareup.moshi.Json
 
 data class ImageData(
     val id: String,
-    @Json(name = "url") val imageUrl: String,
+    @Json(name = "url") val imageUrl: String, // map JSON "url" ke property imageUrl
     val width: Int,
-    val height: Int
+    val height: Int,
+    val breeds: List<Breed>?
+)
+
+data class Breed(
+    val id: String?,
+    val name: String?
 )

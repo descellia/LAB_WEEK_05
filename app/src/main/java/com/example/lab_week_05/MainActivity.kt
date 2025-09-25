@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private val imageResultView: ImageView by lazy {
         findViewById(R.id.image_result)
     }
+
     private val imageLoader: ImageLoader by lazy {
         GlideLoader(this)
     }
@@ -63,13 +64,24 @@ class MainActivity : AppCompatActivity() {
             ) {
                 if (response.isSuccessful) {
                     val image = response.body()
-                    val firstImage = image?.firstOrNull()?.imageUrl ?: "No URL"
-                    apiResponseView.text = getString(R.string.image_placeholder, firstImage)
+                    val firstImage = image?.firstOrNull()
+
+                    val imageUrl = firstImage?.imageUrl.orEmpty()
+
+                    val breedName = firstImage?.breeds?.firstOrNull()?.name ?: "Unknown"
+
+                    if (imageUrl.isNotBlank()) {
+                        imageLoader.loadImage(imageUrl, imageResultView)
+                    } else {
+                        Log.d(MAIN_ACTIVITY, "Missing image URL")
+                    }
+
+                    apiResponseView.text = getString(R.string.image_placeholder, breedName)
                 } else {
-                    Log.e(MAIN_ACTIVITY, "Failed to get response\n" +
-                            response.errorBody()?.string().orEmpty()
+                    Log.e(
+                        MAIN_ACTIVITY,
+                        "Failed to get response\n${response.errorBody()?.string().orEmpty()}"
                     )
-                    apiResponseView.text = "Response failed: ${response.code()}"
                 }
             }
         })

@@ -2,10 +2,13 @@ package com.example.lab_week_05
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.lab_week_05.api.CatApiService
 import com.example.lab_week_05.model.ImageData
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -13,10 +16,15 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 class MainActivity : AppCompatActivity() {
+
     private val retrofit by lazy {
+        val moshi = Moshi.Builder()
+            .add(KotlinJsonAdapterFactory()) // penting biar ga error
+            .build()
+
         Retrofit.Builder()
             .baseUrl("https://api.thecatapi.com/v1/")
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 
@@ -26,6 +34,13 @@ class MainActivity : AppCompatActivity() {
 
     private val apiResponseView: TextView by lazy {
         findViewById(R.id.api_response)
+    }
+
+    private val imageResultView: ImageView by lazy {
+        findViewById(R.id.image_result)
+    }
+    private val imageLoader: ImageLoader by lazy {
+        GlideLoader(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         call.enqueue(object : Callback<List<ImageData>> {
             override fun onFailure(call: Call<List<ImageData>>, t: Throwable) {
                 Log.e(MAIN_ACTIVITY, "Failed to get response", t)
+                apiResponseView.text = "Error: ${t.message}"
             }
 
             override fun onResponse(
@@ -48,15 +64,12 @@ class MainActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val image = response.body()
                     val firstImage = image?.firstOrNull()?.imageUrl ?: "No URL"
-                    apiResponseView.text = getString(
-                        R.string.image_placeholder,
-                        firstImage
-                    )
+                    apiResponseView.text = getString(R.string.image_placeholder, firstImage)
                 } else {
-                    Log.e(
-                        MAIN_ACTIVITY, "Failed to get response\n" +
-                                response.errorBody()?.string().orEmpty()
+                    Log.e(MAIN_ACTIVITY, "Failed to get response\n" +
+                            response.errorBody()?.string().orEmpty()
                     )
+                    apiResponseView.text = "Response failed: ${response.code()}"
                 }
             }
         })
